@@ -82,3 +82,30 @@
     color: #e05a00;
   }
 }
+
+
+.pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination__btn {
+  padding: 6px 12px;
+  background-color: #eee;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.pagination__btn:hover {
+  background-color: #ccc;
+}
+
+.pagination__btn--active {
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+}
