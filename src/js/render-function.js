@@ -5,6 +5,7 @@ import {
   getHomeProducts,
   getProductsByCategory,
   getProductById,
+  getProductsBySearch,
 } from './products-api';
 import { getSelectedCategory, saveSelectedCategory } from './constants';
 
@@ -176,4 +177,48 @@ function resetModal() {
   refs.modal.classList.remove('modal--is-open');
   refs.modalProduct.innerHTML = ''; // Очищення модального вікна
   refs.modal.removeEventListener('click', closeModal);
+}
+
+export async function searchProducts(event) {
+  event.preventDefault(); // Запобігаємо перезавантаженню сторінки
+  const searchQuery = event.target.elements.searchValue.value.trim();
+  // refs.searchFormClearBtn.addEventListener('click', () => {
+  //   refs.searchForm.reset(); // Очищення форми при кліку на кнопку очищення
+  // });
+
+  if (!searchQuery) {
+    try {
+      const products = await getHomeProducts(); // Якщо запит порожній, повертаємося до головних товарів
+      renderHomeProducts(products);
+    } catch (error) {
+      iziToast.error({
+        title: 'Error',
+        message: 'Failed to fetch products. Please try again later.',
+        position: 'topRight',
+      });
+      console.error('Error fetching home products:', error);
+    }
+    refs.searchForm.reset(); // Очищення форми після пошуку
+    refs.notFoundBlock.classList.remove('not-found--visible'); // Прибираємо блок "not found"
+    return;
+  }
+
+  try {
+    const products = await getProductsBySearch(searchQuery);
+    if (products.length === 0) {
+      refs.notFoundBlock.classList.add('not-found--visible');
+      refs.products.innerHTML = '';
+    } else {
+      refs.notFoundBlock.classList.remove('not-found--visible');
+      renderHomeProducts(products);
+    }
+  } catch (error) {
+    iziToast.error({
+      title: 'Error',
+      message: 'Failed to fetch products. Please try again later.',
+      position: 'topRight',
+    });
+    console.error('Error fetching products by search:', error);
+  }
+  refs.searchForm.reset(); // Очищення форми після пошуку
 }
