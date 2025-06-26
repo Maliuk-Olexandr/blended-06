@@ -5,7 +5,9 @@ const refs = {
   categories: document.querySelector('.categories'),
   products: document.querySelector('.products'),
   notFoundBlock: document.querySelector('.not-found'),
-  pagination: document.querySelector('.pagination'),
+  modal: document.querySelector('.modal'),
+  modalProduct: document.querySelector('.modal-product'),
+  modalCloseBtn: document.querySelector('.modal__close-btn'),
 };
 
 export default refs;

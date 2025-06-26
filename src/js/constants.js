@@ -4,7 +4,6 @@ export const STORAGE_KEYS = {
   SELECTED_CATEGORY: 'selected_category',
   CURRENT_PAGE: 'current_page',
 };
-export const PRODUCTS_PER_PAGE = 12; // Кількість товарів на сторінці
 
 
 

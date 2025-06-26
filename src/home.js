@@ -4,46 +4,59 @@ import {
   getCategories,
   getHomeProducts,
   getProductsByCategory,
+  
 } from './js/products-api';
 import {
   renderCategories,
   renderHomeProducts,
-  renderPagination,
+  onItemClick,
 } from './js/render-function';
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
-import {
-  getSelectedCategory,
-  getCurrentPage,
-  resetCurrentPage,
-} from './js/constants';
+import { getSelectedCategory } from './js/constants';
 
-let currentProducts = []; // Змінна для зберігання товарів на головній сторінці
-
-// Виклик функції для завантаження категорій та рендеру на головній сторінці
+// ======= Завантаження категорій і товарів =========
 try {
   const categories = await getCategories();
   renderCategories(categories);
-  // Збереження вибраної категорії в localStorage
+
   const selectedCategory = getSelectedCategory();
+
   const products =
     selectedCategory === 'all'
       ? await getHomeProducts()
       : await getProductsByCategory(selectedCategory);
 
-  currentProducts = products; // Зберігаємо отримані товари в змінну
   renderHomeProducts(products);
-  renderPagination(products.length, 6); // Рендер пагінації на основі кількості товарів
 } catch (error) {
   iziToast.error({
     title: 'Error',
-    message: 'Failed to fetch categories. Please try again later.',
+    message: 'Failed to fetch categories or products. Please try again later.',
     position: 'topRight',
   });
-  console.error('Error fetching categories:', error);
+  console.error('Error fetching categories or products:', error);
 }
-window.addEventListener('paginationChange', () => {
-  const products = window.currentProducts || [];
-  renderHomeProducts(products);
-  renderPagination(products.length);
-});
+
+// ========== Делегування кліку на картки товарів ===========
+refs.products.addEventListener('click', onItemClick);
+
+
+// 4. Реалізуй делегування на списку ul.products
+// при кліку в картку продукту потрібно прочитати попередньо записаний ID на тезі li
+// зробити запит по ендпоінту №3, відкрити модальне вікно і відрендерити в div.modal-product отриманий продукт.
+// шаблон продукту
+// <img class="modal-product__img" src="" alt="" />
+//       <div class="modal-product__content">
+//         <p class="modal-product__title"></p>
+//         <ul class="modal-product__tags"></ul>
+//         <p class="modal-product__description"></p>
+//         <p class="modal-product__shipping-information">Shipping:</p>
+//         <p class="modal-product__return-policy">Return Policy:</p>
+//         <p class="modal-product__price">Price: $</p>
+//         <button class="modal-product__buy-btn" type="button">Buy</button>
+//       </div>
+
+// модальне вікно відкривається додавання до div.modal класу modal--is-open і закривається зняттям цього класу з div.modal
+
+ // Додаємо обробник події для закриття модального вікна
+ 

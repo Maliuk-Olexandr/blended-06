@@ -1,21 +1,18 @@
 //Функцію для створення, рендеру або видалення розмітки
 import refs from './refs';
 import iziToast from 'izitoast';
-import { getHomeProducts, getProductsByCategory } from './products-api';
 import {
-  getSelectedCategory,
-  saveSelectedCategory,
-  saveCurrentPage,
-  getCurrentPage,
-  resetCurrentPage,
-  PRODUCTS_PER_PAGE,
-} from './constants';
+  getHomeProducts,
+  getProductsByCategory,
+  getProductById,
+} from './products-api';
+import { getSelectedCategory, saveSelectedCategory } from './constants';
 
 // ---- Функція для рендеру категорій
 export function renderCategories(categories) {
   const selectedCategory = getSelectedCategory();
   // Якщо категорія не знайдена, встановлюємо "All" як вибрану категорію
-  if (!categories.map(i=> i.toLowerCase).includes(selectedCategory)) {
+  if (!categories.map(i => i.toLowerCase()).includes(selectedCategory)) {
     localStorage.setItem('selected_category', 'all');
   }
   const categoriesList = ['All', 'nobody', ...categories] // Додаємо "All" та "nobody" до списку категорій
@@ -50,13 +47,7 @@ export function renderHomeProducts(products) {
   if (refs.notFoundBlock) {
     refs.notFoundBlock.classList.remove('not-found--visible');
   }
-  const currentPage = getCurrentPage();
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE; // Обчислюємо початковий індекс для пагінації
-  const endIndex = startIndex + PRODUCTS_PER_PAGE;
-  // Відрізаємо масив товарів відповідно до поточної сторінки
-  const paginatedProducts = products.slice(startIndex, endIndex);
-
-  const productsList = paginatedProducts
+  const productsList = products
     .map(product => {
       const { id, title, brand, category, price, description, images } =
         product;
@@ -80,16 +71,15 @@ export function renderHomeProducts(products) {
 async function onCategoryClick(event) {
   const categoryButton = event.target.closest('.categories__btn');
   if (!categoryButton) return;
-  const allCategoryButton =
+  const allCategoryButtons =
     refs.categories.querySelectorAll('.categories__btn');
-  allCategoryButton.forEach(btn => {
+  allCategoryButtons.forEach(btn => {
     btn.classList.remove('categories__btn--active');
   });
   categoryButton.classList.add('categories__btn--active');
   const selectedCategory = categoryButton.textContent.trim().toLowerCase();
   // Збереження вибраної категорії в localStorage
   saveSelectedCategory(selectedCategory);
-  resetCurrentPage(); // Скидаємо поточну сторінку при зміні категорії
 
   try {
     const products =
@@ -97,17 +87,7 @@ async function onCategoryClick(event) {
         ? await getHomeProducts()
         : await getProductsByCategory(selectedCategory);
 
-    window.currentProducts = products; // Зберігаємо отримані товари в глобальну змінну
-
     renderHomeProducts(products);
-    renderPagination(products.length, PRODUCTS_PER_PAGE); // Рендер пагінації на основі кількості товарів
-
-    const paginationEvent = new CustomEvent('paginationChange', {
-      detail: {
-        page: 1, // Скидаємо на першу сторінку при зміні категорії
-      },
-    });
-    window.dispatchEvent(paginationEvent); // Викликаємо подію для оновлення пагінації
   } catch (error) {
     console.error(`Error fetching products for ${selectedCategory}:`, error);
     iziToast.error({
@@ -118,64 +98,82 @@ async function onCategoryClick(event) {
   }
 }
 
-// Функція для рендера пагінації
-export function renderPagination(totalItem, itemPerPage = PRODUCTS_PER_PAGE) {
-  const currentPage = getCurrentPage();
-  const totalPages = Math.ceil(totalItem / itemPerPage);
-  refs.pagination.innerHTML = ''; // Очищення попередньої пагінації
-  //   if (totalPages <= 1) {
-  //     refs.pagination.classList.add('pagination--hidden');
-  //     return; // Якщо сторінок менше або дорівнює 1, ховаємо пагінацію
-  //   }
-  //   refs.pagination.classList.remove('pagination--hidden');
-  //   const paginationList = Array.from({ length: totalPages }, (_, index) => {
-  //     const pageNumber = index + 1;
-  //     const isActive = pageNumber === currentPage ? 'pagination__item--active' : '';
-  //     return `<li class="pagination__item ${isActive}" data-page="${pageNumber}">
-  //       <button class="pagination__btn" type="button">${pageNumber}</button>
-  //     </li>`;
-  //   }
-  //   ).join('');
-  //   refs.pagination.insertAdjacentHTML('beforeend', paginationList);
-  //   refs.pagination.addEventListener('click', onPaginationClick);
-  if (totalPages <= 1) {
-    refs.pagination.innerHTML = '';
-    return; // Якщо сторінок менше або дорівнює 1, ховаємо пагінацію
+//----- Функція для обробки кліку на товар
+// Ця функція викликається при кліку на товар
+export async function onItemClick(event) {
+  const productItem = event.target.closest('.products__item');
+  if (!productItem) return; // Якщо клік не по товару, виходим
+  const productId = productItem.dataset.id; // Отримуємо ID товару з атрибуту data-id
+  try {
+    const product = await getProductById(productId);
+    renderProductModal(product);
+  } catch (error) {
+    iziToast.error({
+      title: 'Error',
+      message: 'Failed to fetch product details. Please try again later.',
+      position: 'topRight',
+    });
+    console.error(`Error fetching product with ID ${productId}:`, error);
   }
-  // Створюємо кнопки пагінації
-  let buttonMarkup = '';
-  // Додаємо кнопку для переходу на першу сторінку
-  if (currentPage > 1) {
-    buttonMarkup += `<button class="pagination__btn" type="button" data-page="${
-      currentPage - 1
-    }">Previous</button>`;
-  }
-  // Додаємо кнопки для кожної сторінки
-  for (let i = 1; i <= totalPages; i++) {
-    buttonMarkup += `<button class="pagination__btn ${
-      i === currentPage ? 'pagination__btn--active' : ''
-    }" type="button" data-page="${i}">${i}</button>`;
-  }
-  // Додаємо кнопку для переходу на наступну сторінку
-  if (currentPage < totalPages) {
-    buttonMarkup += `<button class="pagination__btn" type="button" data-page="${
-      currentPage + 1
-    }">Next</button>`;
-  }
-  refs.pagination.innerHTML = buttonMarkup; // Вставляємо кнопки пагінації в DOM
-  refs.pagination.addEventListener('click', onPaginationClick);
+}
+// Функція для рендеру продукту в модальному вікні
+function renderProductModal(product) {
+  if (!refs.modalProduct) return;
+  const {
+    images,
+    title,
+    description,
+    brand,
+    category,
+    price,
+    shippingInformation,
+    returnPolicy,
+  } = product;
+  refs.modalProduct.innerHTML = `
+    <img class="modal-product__img" src="${
+      images?.[0] || 'https://via.placeholder.com/150'
+    }" alt="${title}" />
+    <div class="modal-product__content">
+      <p class="modal-product__title">${title}</p>
+      <ul class="modal-product__tags">
+        <li>Brand: ${brand}</li>
+        <li>Category: ${category}</li>
+      </ul>
+      <p class="modal-product__description">${description}</p>
+      <p class="modal-product__shipping-information">Shipping: ${
+        shippingInformation || 'N/A'
+      }</p>
+      <p class="modal-product__return-policy">Return Policy: ${
+        returnPolicy || 'N/A'
+      }</p>
+      <p class="modal-product__price">Price: $${price}</p>
+      <button class="modal-product__buy-btn" type="button">Buy</button>
+    </div>`;
+  refs.modal.classList.add('modal--is-open');
+  closeModal();
 }
 
-function onPaginationClick(event) {
-  const pageButton = event.target.closest('.pagination__btn');
-  if (!pageButton) return;
-  const selectedPage = Number(pageButton.dataset.page);
-  saveCurrentPage(selectedPage); // Збереження поточної сторінки в localStorage
-  // Оновлюємо товари на головній сторінці відповідно до вибраної сторінки
-  const paginationEvent = new CustomEvent('paginationChange', {
-    detail: {
-      page: getCurrentPage(),
-    },
+// Функція для закриття модального вікна
+function closeModal() {
+  refs.modal.addEventListener('click', event => {
+    if (
+      event.target === refs.modal ||
+      event.target.classList.contains('modal-product__buy-btn')
+    ) {
+      resetModal(); // Закриваємо модальне вікно при кліку на фон або кнопку "Buy"
+    }
   });
-  window.dispatchEvent(paginationEvent); // Викликаємо подію для оновлення пагінації
+  // Додаємо обробник події для закриття модального вікна
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      resetModal(); // Закриваємо модальне вікно при натисканні клавіші Escape}
+    }
+  });
+  refs.modalCloseBtn.addEventListener('click', resetModal); // Додаємо обробник для кнопки закриття
+}
+
+function resetModal() {
+  refs.modal.classList.remove('modal--is-open');
+  refs.modalProduct.innerHTML = ''; // Очищення модального вікна
+  refs.modal.removeEventListener('click', closeModal);
 }
