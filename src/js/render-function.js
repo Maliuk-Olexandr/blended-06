@@ -7,7 +7,12 @@ import {
   getProductById,
   getProductsBySearch,
 } from './products-api';
-import { getSelectedCategory, saveSelectedCategory } from './constants';
+import {
+  getSelectedCategory,
+  saveSelectedCategory,
+  getWishlist,
+} from './storage';
+import { setupWishlistButton } from './wishlist-utils';
 
 // ---- Функція для рендеру категорій
 export function renderCategories(categories) {
@@ -69,7 +74,7 @@ export function renderHomeProducts(products) {
 //----- Функція для обробки кліку на категорії
 // Ця функція викликається при кліку на кнопку категорії
 // Вона отримує назву категорії та викликає відповідну функцію для отримання товарів
-async function onCategoryClick(event) {
+export async function onCategoryClick(event) {
   const categoryButton = event.target.closest('.categories__btn');
   if (!categoryButton) return;
   const allCategoryButtons =
@@ -116,11 +121,14 @@ export async function onItemClick(event) {
     });
     console.error(`Error fetching product with ID ${productId}:`, error);
   }
+
 }
+
 // Функція для рендеру продукту в модальному вікні
 function renderProductModal(product) {
   if (!refs.modalProduct) return;
   const {
+    id,
     images,
     title,
     description,
@@ -130,6 +138,7 @@ function renderProductModal(product) {
     shippingInformation,
     returnPolicy,
   } = product;
+  refs.modalProduct.dataset.id = id; // Зберігаємо ID продукту в атрибуті data-id
   refs.modalProduct.innerHTML = `
     <img class="modal-product__img" src="${
       images?.[0] || 'https://via.placeholder.com/150'
@@ -150,6 +159,10 @@ function renderProductModal(product) {
       <p class="modal-product__price">Price: $${price}</p>
       <button class="modal-product__buy-btn" type="button">Buy</button>
     </div>`;
+
+  // ========== add to wishlist ===========
+
+  setupWishlistButton(id);
   refs.modal.classList.add('modal--is-open');
   closeModal();
 }
@@ -222,3 +235,21 @@ export async function searchProducts(event) {
   }
   refs.searchForm.reset(); // Очищення форми після пошуку
 }
+
+
+
+
+
+
+  export function updateWishlistCount() {
+    const wishlist = getWishlist();
+    const countElement = document.querySelector('[data-wishlist-count]');
+    if (countElement) {
+      countElement.textContent = wishlist.length;
+      // Можна додатково приховувати 0, якщо потрібно
+      countElement.style.display =
+        wishlist.length === 0 ? 'none' : 'inline-block';
+    }
+}
+  
+

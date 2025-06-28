@@ -4,17 +4,18 @@ import {
   getCategories,
   getHomeProducts,
   getProductsByCategory,
-  getProductsBySearch
 } from './js/products-api';
 import {
   renderCategories,
   renderHomeProducts,
   onItemClick,
   searchProducts,
+  updateWishlistCount,
 } from './js/render-function';
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
-import { getSelectedCategory } from './js/constants';
+import { getSelectedCategory } from './js/storage';
+
 
 // ======= Завантаження категорій і товарів =========
 try {
@@ -43,3 +44,8 @@ refs.products.addEventListener('click', onItemClick);
 
 // ========== Пошук товару ===========
 refs.searchForm.addEventListener('submit', searchProducts);
+
+// ========== Оновлення лічильника у Wishlist ===========
+updateWishlistCount();
+
+

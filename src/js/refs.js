@@ -18,13 +18,12 @@ export default refs;
 
 // refs.form - форма пошуку
 // refs.categories - категорії
-// refs.loadMoreBtn - кнопка "Завантажити більше"
-// refs.homeLink - посилання на домашню сторінку
 // refs.products - товари
 // refs.notFoundBlock - блок, який показується, якщо товари не знайдено
-// refs.pagination - пагінація для навігації між сторінками товарів
+
 // refs.modal - модальне вікно для перегляду товару
 // refs.modalProduct - товар у модальному вікні
 // refs.modalCloseBtn - кнопка закриття модального вікна
+
 // refs.searchForm - форма пошуку товарів
 // refs.searchFormClearBtn - кнопка очищення форми пошуку
